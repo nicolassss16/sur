@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: surpide-app
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: ADMIN_MASTER_KEY
+        value: admin2026
+      - key: DB_PATH
+        value: surpide_prod.db

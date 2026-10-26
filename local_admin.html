@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurPide | Admin Exclusivo para Comercios</title>
+<style>
+  :root {
+    --bg: #0b1120; --card: #1e293b; --orange: #ff5500;
+    --green: #10b981; --blue: #3b82f6; --text: #f8fafc;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text);
+    margin: 0; padding: 20px;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #334155; padding-bottom: 14px; margin-bottom: 20px;
+  }
+  .logo { font-size: 24px; font-weight: 900; color: var(--orange); }
+  .logo span { color: #fff; }
+  .card {
+    background: var(--card); border-radius: 16px; padding: 22px; margin-bottom: 20px;
+    border: 1px solid #334155; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  input, select {
+    width: 100%; padding: 11px 14px; margin-bottom: 12px;
+    background: #0f172a; color: #fff; border: 1.5px solid #475569; border-radius: 10px; font-size: 14px;
+  }
+  label { display: block; font-size: 12.5px; font-weight: 700; color: #94a3b8; margin-bottom: 4px; }
+  button {
+    border: none; padding: 12px 20px; border-radius: 10px; font-weight: 800;
+    cursor: pointer; font-size: 14px; color: #fff; background: var(--orange);
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">SUR<span>PIDE</span> | Panel de Gestión del Comercio</div>
+    <a href="/comercio" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">🖥️ Abrir KDS Cocina</a>
+  </header>
+
+  <!-- PANTALLA 1: LOGIN CON SLUG Y PIN -->
+  <div id="login-box" class="card" style="max-width:440px; margin:40px auto;">
+    <h2 style="margin-top:0;">🔐 Acceso Exclusivo Comercios</h2>
+    <p style="color:#94a3b8; font-size:13.5px;">Ingresá el identificador de tu local (Slug) y tu PIN de seguridad asignado.</p>
+    
+    <label>Identificador del Local (Slug)</label>
+    <input type="text" id="login-slug" placeholder="Ej: burger-sur (o la-estacion)">
+
+    <label>PIN de Acceso (4 dígitos)</label>
+    <input type="password" id="login-pin" placeholder="Ej: 1234">
+
+    <button onclick="loginComercio()" style="width:100%; background:var(--green); margin-top:6px;">Ingresar a mi Panel</button>
+    <div style="margin-top:14px; font-size:12px; color:#94a3b8; text-align:center;">
+      Prueba de accesos precargados:<br>
+      • Burger Sur ➔ Slug: <code>burger-sur</code> | PIN: <code>1234</code><br>
+      • Pizzería La Estación ➔ Slug: <code>la-estacion</code> | PIN: <code>5678</code><br>
+      • Heladería Polo Sur ➔ Slug: <code>helados-polo-sur</code> | PIN: <code>1111</code>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: CONFIGURACIÓN DEL LOCAL (OCULTA HASTA LOGuear) -->
+  <div id="admin-panel" class="card" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 id="ap-titulo" style="margin:0;">Configuración de Local</h2>
+      <button onclick="cerrarSesion()" style="background:#ef4444; padding:8px 14px; font-size:12px;">Cerrar Sesión</button>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label>Nombre del Comercio</label>
+        <input type="text" id="ap-nombre">
+      </div>
+      <div>
+        <label>WhatsApp de Contacto / Pedidos</label>
+        <input type="text" id="ap-whatsapp">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label>Alias de Mercado Pago / Banco</label>
+        <input type="text" id="ap-alias">
+      </div>
+      <div>
+        <label>Tiempo Estimado de Entrega</label>
+        <input type="text" id="ap-tiempo" placeholder="25-35 min">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label>Estado de Apertura</label>
+        <select id="ap-abierto">
+          <option value="1">🟢 ABIERTO (Recibiendo Pedidos)</option>
+          <option value="0">🔴 CERRADO TEMPORALMENTE</option>
+        </select>
+      </div>
+      <div>
+        <label>PIN de Seguridad Nuevo (Opcional)</label>
+        <input type="text" id="ap-pin" placeholder="Nuevo PIN numérico">
+      </div>
+    </div>
+
+    <hr style="border:0; border-top:1px solid #334155; margin:16px 0;">
+
+    <h3 style="margin-top:0; color:#38bdf8;">🛵 Configuración de Logística y Costos de Envío</h3>
+    <div class="grid-2">
+      <div>
+        <label>Modalidad de Logística</label>
+        <select id="ap-modo-log">
+          <option value="PROPIA">🛵 100% Logística Propia del Local</option>
+          <option value="HIBRIDA">⚡ Híbrida (Propios + Red SurPide de Apoyo)</option>
+          <option value="SURPIDE">🌐 100% Flota Red SurPide</option>
+        </select>
+      </div>
+      <div>
+        <label>Motor de Cálculo de Envío</label>
+        <select id="ap-tipo-tarifa">
+          <option value="KM">📍 Dinámica por Kilómetro (Base + $/km)</option>
+          <option value="FIJA">💲 Tarifa Fija Propia</option>
+          <option value="GRATIS_DESDE">🎁 Envío Gratis superando Monto Mínimo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label>Costo Base o Fijo de Envío ($)</label>
+        <input type="number" id="ap-costo-fijo">
+      </div>
+      <div>
+        <label>Costo Adicional por Kilómetro ($/km)</label>
+        <input type="number" id="ap-costo-km">
+      </div>
+    </div>
+
+    <div>
+      <label>Monto mínimo para Envío Gratis ($) (Si aplica)</label>
+      <input type="number" id="ap-gratis-desde">
+    </div>
+
+    <button onclick="guardarAdminLocal()" style="width:100%; background:var(--green); margin-top:10px;">💾 Guardar Cambios en mi Local</button>
+  </div>
+
+</div>
+
+<script>
+  let comercioAutenticado = null;
+  let tokenComercio = null;
+
+  async function loginComercio() {
+    const slug = document.getElementById("login-slug").value.trim();
+    const pin = document.getElementById("login-pin").value.trim();
+    if (!slug || !pin) return alert("Ingresá tu Slug y tu PIN.");
+
+    const res = await fetch("/api/local-auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug, pin })
+    });
+    const data = await res.json();
+    if (!res.ok) return alert(data.detail || "Credenciales incorrectas.");
+
+    comercioAutenticado = data.comercio;
+    tokenComercio = data.token;
+    document.getElementById("login-box").style.display = "none";
+    document.getElementById("admin-panel").style.display = "block";
+
+    // Cargar datos en los inputs
+    document.getElementById("ap-titulo").innerText = `Admin de Local: ${comercioAutenticado.nombre}`;
+    document.getElementById("ap-nombre").value = comercioAutenticado.nombre;
+    document.getElementById("ap-whatsapp").value = comercioAutenticado.whatsapp;
+    document.getElementById("ap-alias").value = comercioAutenticado.alias_mp;
+    document.getElementById("ap-tiempo").value = comercioAutenticado.tiempo_estimado;
+    document.getElementById("ap-abierto").value = comercioAutenticado.abierto;
+    document.getElementById("ap-pin").value = "";
+    document.getElementById("ap-modo-log").value = comercioAutenticado.modo_logistica;
+    document.getElementById("ap-tipo-tarifa").value = comercioAutenticado.tipo_tarifa_propia;
+    document.getElementById("ap-costo-fijo").value = comercioAutenticado.costo_envio_fijo;
+    document.getElementById("ap-costo-km").value = comercioAutenticado.costo_por_km;
+    document.getElementById("ap-gratis-desde").value = comercioAutenticado.envio_gratis_desde;
+  }
+
+  function cerrarSesion() {
+    comercioAutenticado = null;
+    document.getElementById("login-box").style.display = "block";
+    document.getElementById("admin-panel").style.display = "none";
+  }
+
+  async function guardarAdminLocal() {
+    if (!comercioAutenticado) return;
+    const payload = {
+      comercio_id: comercioAutenticado.id,
+      nuevo_pin: document.getElementById("ap-pin").value.trim(),
+      nombre: document.getElementById("ap-nombre").value.trim(),
+      whatsapp: document.getElementById("ap-whatsapp").value.trim(),
+      alias_mp: document.getElementById("ap-alias").value.trim(),
+      tiempo_estimado: document.getElementById("ap-tiempo").value.trim(),
+      abierto: parseInt(document.getElementById("ap-abierto").value),
+      modo_logistica: document.getElementById("ap-modo-log").value,
+      tipo_tarifa_propia: document.getElementById("ap-tipo-tarifa").value,
+      costo_envio_fijo: parseFloat(document.getElementById("ap-costo-fijo").value || "1200"),
+      costo_por_km: parseFloat(document.getElementById("ap-costo-km").value || "400"),
+      envio_gratis_desde: parseFloat(document.getElementById("ap-gratis-desde").value || "18000")
+    };
+
+    const res = await fetch("/api/local-admin/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "X-Comercio-Token": tokenComercio },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      alert("✅ ¡Configuración de tu local actualizada con éxito!");
+    } else {
+      alert("Error al guardar cambios.");
+    }
+  }
+</script>
+</body>
+</html>

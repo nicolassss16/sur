@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SurPide v5 PRO | KDS + Rendición de Cajas + Tarifas por KM</title>
+<style>
+  :root {
+    --bg: #0b1120; --card: #1e293b; --orange: #ff5500;
+    --green: #10b981; --blue: #3b82f6; --purple: #8b5cf6; --text: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); margin: 0; padding: 18px;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #334155; padding-bottom: 14px; margin-bottom: 18px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .logo { font-size: 22px; font-weight: 900; color: var(--orange); }
+  .logo span { color: #fff; }
+  .top-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select, input {
+    background: #0f172a; color: #fff; border: 1px solid #475569;
+    padding: 8px 12px; border-radius: 8px; font-size: 13.5px;
+  }
+  .tab-btn {
+    background: #1e293b; color: #cbd5e1; border: 1px solid #334155;
+    padding: 9px 14px; border-radius: 9px; font-weight: 800; cursor: pointer; font-size: 13px;
+  }
+  .tab-btn.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .status-pill {
+    background: #064e3b; color: #34d399; padding: 6px 12px;
+    border-radius: 999px; font-size: 12.5px; font-weight: 800;
+  }
+
+  .kpi-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-bottom: 18px;
+  }
+  .kpi-box {
+    background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 16px;
+  }
+  .kpi-box small { color: #94a3b8; font-size: 11.5px; font-weight: 700; text-transform: uppercase; }
+  .kpi-box strong { display: block; font-size: 20px; margin-top: 4px; color: #fff; }
+
+  .kanban-board {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;
+  }
+  .kanban-col {
+    background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 12px;
+    min-height: 65vh;
+  }
+  .col-title {
+    font-size: 13.5px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
+    padding-bottom: 10px; margin-bottom: 12px; border-bottom: 2px solid #334155;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .pedido-card {
+    background: var(--card); border-left: 5px solid var(--orange);
+    border-radius: 12px; padding: 14px; margin-bottom: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  }
+  .pedido-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; font-size: 16px; font-weight: 900;
+  }
+  .badge-entrega {
+    font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 800;
+  }
+  .b-envio { background: #1e3a8a; color: #93c5fd; }
+  .b-retiro { background: #7c2d12; color: #fed7aa; }
+  .info-box { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 10px; }
+  .items-list {
+    background: #0b1120; padding: 10px; border-radius: 8px;
+    font-family: monospace; font-size: 13px; margin-bottom: 10px; line-height: 1.4;
+  }
+  .totales {
+    display: flex; justify-content: space-between; font-weight: 800; font-size: 14px;
+    border-top: 1px solid #334155; padding-top: 8px; margin-bottom: 10px;
+  }
+  .btn-group { display: flex; flex-direction: column; gap: 6px; }
+  button {
+    border: none; padding: 9px 12px; border-radius: 8px; font-weight: 800;
+    cursor: pointer; font-size: 12.5px; color: #fff;
+  }
+  .btn-print { background: var(--green); }
+  .btn-moto { background: var(--blue); }
+  .btn-propio { background: #0284c7; }
+  .btn-ready { background: var(--purple); }
+  .btn-wa { background: #25D366; color: #052e16; }
+  .btn-comp { background: #f59e0b; color: #0f172a; }
+
+  .dispatch-own-box {
+    background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px;
+  }
+
+  #vista-menu, #vista-logistica, #vista-rendicion { display: none; }
+  .menu-table {
+    width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden;
+  }
+  .menu-table th, .menu-table td {
+    padding: 12px; text-align: left; border-bottom: 1px solid #334155; font-size: 13.5px;
+  }
+  .menu-table th { background: #0f172a; color: #94a3b8; }
+
+  #modal-comprobante {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    justify-content: center; align-items: center; z-index: 100;
+  }
+  .modal-content {
+    background: #1e293b; padding: 20px; border-radius: 14px; text-align: center;
+  }
+  .modal-content img { max-width: 380px; max-height: 72vh; border-radius: 8px; }
+
+  #ticket-80mm { display: none; }
+  @media print {
+    @page { size: 80mm auto; margin: 0mm; }
+    body * { visibility: hidden; }
+    #ticket-80mm, #ticket-80mm * { visibility: visible; }
+    #ticket-80mm {
+      display: block; position: absolute; left: 0; top: 0;
+      width: 72mm; padding: 3mm; background: #fff; color: #000;
+      font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.3;
+    }
+    .t-center { text-align: center; }
+    .t-bold { font-weight: bold; font-size: 14px; }
+    .t-line { border-top: 1px dashed #000; margin: 6px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SUR<span>PIDE</span> PRO | KDS + Caja + Logística</div>
+  <div class="top-controls">
+    <select id="select-comercio" onchange="cambiarComercio()"></select>
+    <button id="tab-kds" class="tab-btn active" onclick="mostrarVista('kds')">🔥 Tablero KDS</button>
+    <button id="tab-rendicion" class="tab-btn" onclick="mostrarVista('rendicion')">💵 Cierre de Caja / Rendición</button>
+    <button id="tab-logistica" class="tab-btn" onclick="mostrarVista('logistica')">🛵 Logística y Tarifas KM</button>
+    <button id="tab-menu" class="tab-btn" onclick="mostrarVista('menu')">🍔 Menú y Precios</button>
+    <button onclick="sonarTimbre()" style="background:#334155;">🔔 Sonido</button>
+    <div id="ws-status" class="status-pill">Conectando...</div>
+  </div>
+</header>
+
+<!-- VISTA 1: KDS -->
+<div id="vista-kds">
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <small>Modalidad Logística</small>
+      <strong id="kpi-modo-log" style="color:#38bdf8;">HÍBRIDA</strong>
+    </div>
+    <div class="kpi-box">
+      <small>Viajes Propios vs Red</small>
+      <strong id="kpi-flotas">0 Propios / 0 Red</strong>
+    </div>
+    <div class="kpi-box">
+      <small>Efectivo Recaudado</small>
+      <strong id="kpi-efec" style="color:#34d399;">$0</strong>
+    </div>
+    <div class="kpi-box">
+      <small>Transferencias</small>
+      <strong id="kpi-transf" style="color:#60a5fa;">$0</strong>
+    </div>
+    <div class="kpi-box">
+      <small>Ahorro vs Apps (30%)</small>
+      <strong id="kpi-ahorro-comercio" style="color:#fbbf24;">$0</strong>
+    </div>
+  </div>
+
+  <div class="kanban-board">
+    <div class="kanban-col">
+      <div class="col-title" style="border-color:#f97316;">
+        <span>🔔 1. Nuevos Entrantes</span>
+        <span id="cnt-pend" class="badge-entrega b-envio">0</span>
+      </div>
+      <div id="col-PENDIENTE"></div>
+    </div>
+
+    <div class="kanban-col">
+      <div class="col-title" style="border-color:#eab308;">
+        <span>🔥 2. En Cocina / Asignar Envío</span>
+        <span id="cnt-cocina" class="badge-entrega b-envio">0</span>
+      </div>
+      <div id="col-EN_COCINA"></div>
+    </div>
+
+    <div class="kanban-col">
+      <div class="col-title" style="border-color:#8b5cf6;">
+        <span>🛵 3. En Camino / Para Retirar</span>
+        <span id="cnt-camino" class="badge-entrega b-envio">0</span>
+      </div>
+      <div id="col-EN_CAMINO"></div>
+    </div>
+
+    <div class="kanban-col">
+      <div class="col-title" style="border-color:#10b981;">
+        <span>✅ 4. Entregados</span>
+        <span id="cnt-entregado" class="badge-entrega b-envio">0</span>
+      </div>
+      <div id="col-ENTREGADO"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA 2: CIERRE DE CAJA Y RENDICIÓN DE CADETES -->
+<div id="vista-rendicion">
+  <div style="background:#1e293b; padding:22px; border-radius:16px; border:1px solid #334155; margin-bottom:20px;">
+    <h3 style="margin-top:0; color:#34d399;">💵 Cierre de Turno y Rendición de Caja por Cadete Propio</h3>
+    <p style="color:#94a3b8; font-size:13.5px;">
+      Cuando el repartidor propio vuelve al local al terminar su turno, el sistema calcula automáticamente cuánto efectivo cobró de los clientes, cuánto le corresponde de viático/envíos, y cuánto dinero en efectivo debe entregarle al cajero del local.
+    </p>
+
+    <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-top:16px;">
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Seleccionar Cadete Propio</label>
+        <select id="rend-sel-cadete" style="padding:10px; width:220px;" onchange="calcularPreRendicion()"></select>
+      </div>
+      <button onclick="calcularPreRendicion()" style="background:#3b82f6; padding:11px 16px;">🔄 Calcular Caja del Cadete</button>
+    </div>
+
+    <div id="resultado-rendicion" style="margin-top:18px; display:none; background:#0f172a; padding:16px; border-radius:12px; border:1px solid #334155;">
+      <h4 style="margin:0 0 10px 0; color:#f8fafc;">Resumen de Turno de <span id="rr-nombre">-</span>:</h4>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:14px; margin-bottom:14px;">
+        <div>📦 Pedidos Entregados: <strong id="rr-cant" style="color:#38bdf8;">0</strong></div>
+        <div>💵 Efectivo Cobrado en Calle: <strong id="rr-efec" style="color:#34d399;">$0</strong></div>
+        <div>🛵 Envíos a Pagar al Cadete: <strong id="rr-envios" style="color:#fbbf24;">$0</strong></div>
+      </div>
+      <div style="background:#064e3b; padding:14px; border-radius:10px; font-size:16px; font-weight:900; color:#34d399; margin-bottom:14px;">
+        💰 EFECTIVO NETO A RENDIR AL CAJERO: $<span id="rr-neto">0</span>
+      </div>
+      <button onclick="confirmarRendicionCaja()" style="background:var(--green); padding:12px 20px; font-size:15px;">✓ Confirmar Cierre de Caja y Archivar Turno</button>
+    </div>
+  </div>
+
+  <div style="background:#1e293b; padding:20px; border-radius:14px; border:1px solid #334155;">
+    <h3 style="margin-top:0;">📋 Historial de Cierres de Caja Realizados</h3>
+    <table class="menu-table">
+      <thead>
+        <tr>
+          <th>Fecha / Hora</th>
+          <th>Repartidor</th>
+          <th>Pedidos</th>
+          <th>Efectivo Cobrado</th>
+          <th>Envíos Pagados</th>
+          <th>Neto Rendido al Local</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-historial-rend"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- VISTA 3: LOGÍSTICA Y TARIFAS POR KM -->
+<div id="vista-logistica">
+  <div style="background:#1e293b; padding:20px; border-radius:14px; margin-bottom:18px; border:1px solid #334155;">
+    <h3 style="margin-top:0; color:#38bdf8;">⚙️ Configuración de Logística y Tarifa Dinámica por Kilómetro / Radio</h3>
+    <p style="color:#94a3b8; font-size:13.5px; margin-top:0;">
+      Configurá si tu local usa **Tarifa por Kilómetro** (calcula automáticamente el envío sumando una base + un valor por cada kilómetro desde tu local), tarifa fija, o envío gratis superando un monto mínimo de compra.
+    </p>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:12px; align-items:end;">
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Modo de Logística</label>
+        <select id="cfg-modo-log" style="width:100%;">
+          <option value="PROPIA">🛵 100% Logística Propia</option>
+          <option value="HIBRIDA">⚡ Híbrida (Propios + Red SurPide)</option>
+          <option value="SURPIDE">🌐 100% Flota Red SurPide</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Motor de Tarifa de Envío</label>
+        <select id="cfg-tipo-tarifa" style="width:100%;">
+          <option value="KM">📍 Dinámica por Kilómetro (Base + $/km)</option>
+          <option value="FIJA">💲 Tarifa Fija Propia</option>
+          <option value="GRATIS_DESDE">🎁 Envío Gratis superando $X</option>
+          <option value="RED">🗺️ Matriz por Zonas SurPide</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Base Tarifa o Fijo ($)</label>
+        <input type="number" id="cfg-costo-fijo" style="width:100%;" value="1200">
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Valor por KM ($)</label>
+        <input type="number" id="cfg-costo-km" style="width:100%;" value="400">
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Envío Gratis en compras desde ($)</label>
+        <input type="number" id="cfg-gratis-desde" style="width:100%;" value="18000">
+      </div>
+      <div>
+        <label style="display:block; font-size:12px; color:#cbd5e1; margin-bottom:4px;">Abierto / Demora / Alias</label>
+        <div style="display:flex; gap:6px;">
+          <select id="cfg-abierto">
+            <option value="1">🟢 Abierto</option>
+            <option value="0">🔴 Cerrado</option>
+          </select>
+          <input type="text" id="cfg-tiempo" style="width:95px;" placeholder="25-35 min">
+          <input type="text" id="cfg-alias" placeholder="Alias MP">
+        </div>
+      </div>
+      <button onclick="guardarConfigComercio()" style="background:var(--green); padding:11px 16px;">💾 Guardar Configuración</button>
+    </div>
+  </div>
+
+  <div style="background:#1e293b; padding:20px; border-radius:14px; border:1px solid #334155;">
+    <h3 style="margin-top:0;">🏍️ Nómina de Repartidores Propios</h3>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+      <input type="text" id="cad-nombre" placeholder="Nombre (Ej: Lucas)" style="flex:1;">
+      <input type="text" id="cad-wa" placeholder="WhatsApp (Ej: 5491166778899)" style="flex:1;">
+      <input type="text" id="cad-veh" placeholder="Vehículo" style="flex:1;">
+      <button onclick="agregarCadetePropio()" style="background:var(--orange); padding:10px 18px;">+ Sumar Cadete</button>
+    </div>
+    <table class="menu-table">
+      <thead>
+        <tr>
+          <th>Repartidor</th>
+          <th>WhatsApp</th>
+          <th>Vehículo</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-cadetes-propios"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- VISTA 4: MENÚ -->
+<div id="vista-menu">
+  <div style="background:#1e293b; padding:18px; border-radius:14px; margin-bottom:18px;">
+    <h3 style="margin-top:0;">➕ Agregar Nuevo Plato a la Carta</h3>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+      <input type="text" id="np-nombre" placeholder="Nombre del plato">
+      <input type="text" id="np-desc" placeholder="Descripción / Ingredientes">
+      <input type="text" id="np-cat" placeholder="Categoría (Ej: Combos)">
+      <input type="number" id="np-mostrador" placeholder="Precio Mostrador ($)">
+      <input type="number" id="np-apps" placeholder="Precio en Otras Apps ($)">
+      <button onclick="crearNuevoProducto()" style="background:var(--orange);">+ Crear Producto</button>
+    </div>
+  </div>
+  <table class="menu-table">
+    <thead>
+      <tr>
+        <th>Plato</th>
+        <th>Categoría</th>
+        <th>Precio Mostrador ($)</th>
+        <th>Precio Otras Apps ($)</th>
+        <th>Stock</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-productos-body"></tbody>
+  </table>
+</div>
+
+<div id="modal-comprobante" onclick="this.style.display='none'">
+  <div class="modal-content">
+    <h3>Comprobante de Transferencia</h3>
+    <img id="img-comprobante" src="" alt="Comprobante">
+    <br><br>
+    <button onclick="document.getElementById('modal-comprobante').style.display='none'" style="background:#ef4444;">Cerrar</button>
+  </div>
+</div>
+
+<div id="ticket-80mm"></div>
+
+<script>
+  let ws = null;
+  let datosSistema = null;
+  let comercioActual = null;
+  let pedidosMap = {};
+
+  function sonarTimbre() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.14);
+      osc.stop(ctx.currentTime + (idx + 1) * 0.14);
+    });
+  }
+
+  async function inicializar() {
+    const res = await fetch("/api/init-data?incluir_pausados=true");
+    datosSistema = await res.json();
+    const sel = document.getElementById("select-comercio");
+    sel.innerHTML = datosSistema.comercios.map(c => `<option value="${c.id}">🏪 ${c.nombre} (${c.localidad})</option>`).join("");
+    cambiarComercio();
+  }
+
+  function mostrarVista(v) {
+    document.getElementById("vista-kds").style.display = v === "kds" ? "block" : "none";
+    document.getElementById("vista-rendicion").style.display = v === "rendicion" ? "block" : "none";
+    document.getElementById("vista-logistica").style.display = v === "logistica" ? "block" : "none";
+    document.getElementById("vista-menu").style.display = v === "menu" ? "block" : "none";
+    document.getElementById("tab-kds").classList.toggle("active", v === "kds");
+    document.getElementById("tab-rendicion").classList.toggle("active", v === "rendicion");
+    document.getElementById("tab-logistica").classList.toggle("active", v === "logistica");
+    document.getElementById("tab-menu").classList.toggle("active", v === "menu");
+    if (v === "rendicion") cargarSelectCadetesRendicion();
+  }
+
+  async function cambiarComercio() {
+    const comercioId = parseInt(document.getElementById("select-comercio").value);
+    const resInit = await fetch("/api/init-data?incluir_pausados=true");
+    datosSistema = await resInit.json();
+    comercioActual = datosSistema.comercios.find(c => c.id === comercioId);
+
+    document.getElementById("cfg-abierto").value = comercioActual.abierto;
+    document.getElementById("cfg-tiempo").value = comercioActual.tiempo_estimado || "25-35 min";
+    document.getElementById("cfg-alias").value = comercioActual.alias_mp || "";
+    document.getElementById("cfg-modo-log").value = comercioActual.modo_logistica || "HIBRIDA";
+    document.getElementById("cfg-tipo-tarifa").value = comercioActual.tipo_tarifa_propia || "KM";
+    document.getElementById("cfg-costo-fijo").value = comercioActual.costo_envio_fijo || 1200;
+    document.getElementById("cfg-costo-km").value = comercioActual.costo_por_km || 400;
+    document.getElementById("cfg-gratis-desde").value = comercioActual.envio_gratis_desde || 18000;
+
+    document.getElementById("kpi-modo-log").innerText = comercioActual.modo_logistica;
+
+    if (ws) ws.close();
+    const res = await fetch(`/api/comercios/${comercioId}/pedidos`);
+    const data = await res.json();
+    pedidosMap = {};
+    data.pedidos.forEach(p => { pedidosMap[p.id] = p; });
+
+    renderizarTablero();
+    renderizarTablaMenu();
+    renderizarTablaCadetesPropios();
+    cargarHistorialRendiciones();
+
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    ws = new WebSocket(`${proto}://${location.host}/ws/comercio/${comercioId}`);
+    setInterval(() => { if (ws && ws.readyState === 1) ws.send('ping'); }, 25000);
+    ws.onopen = () => { document.getElementById("ws-status").innerText = "🟢 KDS En Línea"; };
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.evento === "NUEVO_PEDIDO") {
+        sonarTimbre();
+        pedidosMap[msg.pedido.id] = msg.pedido;
+        renderizarTablero();
+      } else if (msg.evento === "ACTUALIZAR_PEDIDO") {
+        pedidosMap[msg.pedido.id] = msg.pedido;
+        renderizarTablero();
+      }
+    };
+  }
+
+  function renderizarTablero() {
+    const cols = { PENDIENTE: [], EN_COCINA: [], EN_CAMINO: [], ENTREGADO: [] };
+    let totalEfec = 0, totalTransf = 0, totalComida = 0;
+    let propiosCnt = 0, surpideCnt = 0;
+
+    Object.values(pedidosMap).sort((a, b) => b.id - a.id).forEach(p => {
+      if (p.estado !== "CANCELADO") {
+        totalComida += p.subtotal_comida;
+        if (p.metodo_pago === "EFECTIVO") totalEfec += p.total_final;
+        else totalTransf += p.total_final;
+        if (p.tipo_entrega === "ENVIO") {
+          if (p.origen_flota === "SURPIDE") surpideCnt++;
+          else propiosCnt++;
+        }
+      }
+      if (p.estado === "PENDIENTE") cols.PENDIENTE.push(p);
+      else if (p.estado === "EN_COCINA" || p.estado === "BUSCANDO_CADETE") cols.EN_COCINA.push(p);
+      else if (p.estado === "EN_CAMINO") cols.EN_CAMINO.push(p);
+      else if (p.estado === "ENTREGADO") cols.ENTREGADO.push(p);
+    });
+
+    document.getElementById("kpi-flotas").innerText = `${propiosCnt} Propios / ${surpideCnt} Red`;
+    document.getElementById("kpi-efec").innerText = "$" + totalEfec.toLocaleString("es-AR");
+    document.getElementById("kpi-transf").innerText = "$" + totalTransf.toLocaleString("es-AR");
+    document.getElementById("kpi-ahorro-comercio").innerText = "$" + Math.round(totalComida * 0.25).toLocaleString("es-AR");
+
+    document.getElementById("cnt-pend").innerText = cols.PENDIENTE.length;
+    document.getElementById("cnt-cocina").innerText = cols.EN_COCINA.length;
+    document.getElementById("cnt-camino").innerText = cols.EN_CAMINO.length;
+    document.getElementById("cnt-entregado").innerText = cols.ENTREGADO.length;
+
+    ["PENDIENTE", "EN_COCINA", "EN_CAMINO", "ENTREGADO"].forEach(key => {
+      const cont = document.getElementById("col-" + key);
+      cont.innerHTML = cols[key].map(p => crearHtmlTarjeta(p)).join("");
+    });
+  }
+
+  function crearHtmlTarjeta(p) {
+    const items = JSON.parse(p.items_json || "[]");
+    const itemsHtml = items.map(i => `• ${i.cantidad || 1}x ${i.nombre} ($${i.subtotal || i.precio})`).join("<br>");
+    const vuelto = (p.metodo_pago === "EFECTIVO" && p.paga_con > p.total_final)
+      ? `<div style="color:#fbbf24; font-weight:800;">💵 Paga con $${p.paga_con} -> Vuelto: $${p.paga_con - p.total_final}</div>`
+      : "";
+    const waMsg = encodeURIComponent(`¡Hola ${p.cliente_nombre}! Tu pedido #${p.id} en ${comercioActual.nombre} ya está en marcha 🍔🔥. PIN recepción: ${p.pin_entrega}`);
+
+    const cadetesPropios = comercioActual.cadetes_propios || [];
+    const puedeUsarPropio = comercioActual.modo_logistica in { "PROPIA": 1, "HIBRIDA": 1 } && cadetesPropios.length > 0;
+    const puedePedirSurPide = comercioActual.modo_logistica in { "HIBRIDA": 1, "SURPIDE": 1 };
+
+    let bloqueDespachoEnvio = "";
+    if (p.estado === "EN_COCINA" && p.tipo_entrega === "ENVIO") {
+      if (puedeUsarPropio) {
+        const opcionesCadetes = cadetesPropios.map(c => `<option value="${c.id}">🛵 ${c.nombre}</option>`).join("");
+        bloqueDespachoEnvio += `
+          <div class="dispatch-own-box">
+            <small style="display:block; color:#38bdf8; font-weight:800; margin-bottom:4px;">DESPACHAR CON CADETE PROPIO:</small>
+            <div style="display:flex; gap:6px;">
+              <select id="sel-cadete-${p.id}" style="flex:1; padding:6px;">${opcionesCadetes}</select>
+              <button class="btn-propio" onclick="despacharConCadetePropio(${p.id})">🚀 Asignar + WA</button>
+            </div>
+          </div>
+        `;
+      }
+      if (puedePedirSurPide) {
+        bloqueDespachoEnvio += `
+          <button class="btn-moto" onclick="solicitarMotoqueroSurPide(${p.id})">
+            🌐 ${comercioActual.modo_logistica === 'HIBRIDA' ? 'Pedir Moto Apoyo Red SurPide' : 'Llamar Moto Red'} ($${p.costo_envio})
+          </button>
+        `;
+      }
+    }
+
+    return `
+      <div class="pedido-card">
+        <div class="pedido-header">
+          <span>#${p.id} • ${p.cliente_nombre}</span>
+          <span class="badge-entrega ${p.tipo_entrega === 'RETIRO' ? 'b-retiro' : 'b-envio'}">
+            ${p.tipo_entrega === 'RETIRO' ? '🛍️ RETIRO' : `🛵 ${p.origen_flota}`}
+          </span>
+        </div>
+        <div class="info-box">
+          📍 <strong>${p.direccion_calle}</strong> ${p.entrecalles !== '-' ? `(e/ ${p.entrecalles})` : ''}<br>
+          🏘️ ${p.barrio_destino}, ${p.localidad_destino} (${p.distancia_km || 1.5} km)<br>
+          ${p.referencia_casa ? `📝 Ref: ${p.referencia_casa}<br>` : ""}
+          💳 <strong>${p.metodo_pago}</strong> | 🔐 PIN: <strong>${p.pin_entrega}</strong> | 🕒 ${p.creado_en}
+          ${vuelto}
+          ${p.repartidor_nombre ? `<div style="color:#38bdf8; margin-top:4px;">🛵 Asignado: <strong>${p.repartidor_nombre}</strong> ${p.rendido ? '<i>(Caja Rendida)</i>' : ''}</div>` : ""}
+        </div>
+        <div class="items-list">${itemsHtml}</div>
+        <div class="totales">
+          <span>Comida: $${p.subtotal_comida - (p.descuento_cupon || 0)} | Envío: $${p.costo_envio}</span>
+          <span style="color:#34d399;">$${p.total_final}</span>
+        </div>
+        <div class="btn-group">
+          ${p.comprobante_base64 ? `<button class="btn-comp" onclick="verComprobante(${p.id})">🔍 Ver Comprobante</button>` : ""}
+          ${p.estado === "PENDIENTE" ? `
+            <button class="btn-print" onclick="aceptarEImprimir(${p.id})">🖨️ Aceptar + Imprimir 80mm</button>
+          ` : `
+            <button style="background:#334155;" onclick="imprimirSoloTicket(${p.id})">🖨️ Reimprimir 80mm</button>
+          `}
+          ${bloqueDespachoEnvio}
+          ${(p.estado === "EN_COCINA" && p.tipo_entrega === "RETIRO") ? `
+            <button class="btn-ready" onclick="cambiarEstado(${p.id}, 'EN_CAMINO')">🛍️ Avisar Listo para Retirar</button>
+          ` : ""}
+          ${p.estado === "EN_CAMINO" ? `
+            <button class="btn-print" onclick="cambiarEstado(${p.id}, 'ENTREGADO')">✅ Marcar como Entregado</button>
+          ` : ""}
+          <button class="btn-wa" onclick="window.open('https://wa.me/549${p.cliente_tel.replace(/[^0-9]/g,'')}?text=${waMsg}', '_blank')">💬 WhatsApp al Cliente</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function despacharConCadetePropio(pedidoId) {
+    const sel = document.getElementById(`sel-cadete-${pedidoId}`);
+    if (!sel) return;
+    const cadeteId = parseInt(sel.value);
+    const res = await fetch(`/api/pedidos/${pedidoId}/despachar-propio`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cadete_id: cadeteId })
+    });
+    const data = await res.json();
+    if (!res.ok) return alert("Error al asignar cadete.");
+
+    const p = data.pedido;
+    const cad = data.cadete;
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.direccion_calle + ', ' + p.localidad_destino + ', Buenos Aires')}`;
+    const instruccionCobro = p.metodo_pago === "EFECTIVO"
+      ? `💵 COBRAR EN EFECTIVO: $${p.total_final}${p.paga_con > p.total_final ? ` (Paga con $${p.paga_con}, llevar vuelto $${p.paga_con - p.total_final})` : ''}`
+      : `✅ YA PAGADO POR TRANSFERENCIA (No cobrar al cliente)`;
+
+    const textoCadete = encodeURIComponent(
+      `🛵 *VIAJE #${p.id} - ${comercioActual.nombre}*
+` +
+      `👤 Cliente: ${p.cliente_nombre} (${p.cliente_tel})
+` +
+      `📍 Dirección: *${p.direccion_calle}* (e/ ${p.entrecalles}) - ${p.barrio_destino}, ${p.localidad_destino}
+` +
+      `${instruccionCobro}
+` +
+      `🔐 PIN Recepción: ${p.pin_entrega}
+` +
+      `🗺️ Maps: ${mapsLink}`
+    );
+
+    if (confirm(`✅ Asignado a ${cad.nombre}. ¿Abrir WhatsApp para enviarle la hoja de ruta?`)) {
+      window.open(`https://wa.me/${cad.whatsapp.replace(/[^0-9]/g, '')}?text=${textoCadete}`, "_blank");
+    }
+  }
+
+  async function solicitarMotoqueroSurPide(id) {
+    const res = await fetch(`/api/pedidos/${id}/solicitar-cadete`, { method: "POST" });
+    if (res.ok) alert(`🌐 Viaje #${id} derivado a la Red SurPide.`);
+  }
+
+  function verComprobante(id) {
+    document.getElementById("img-comprobante").src = pedidosMap[id].comprobante_base64;
+    document.getElementById("modal-comprobante").style.display = "flex";
+  }
+
+  async function cambiarEstado(id, nuevoEstado) {
+    await fetch(`/api/pedidos/${id}/estado`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado: nuevoEstado })
+    });
+  }
+
+  async function aceptarEImprimir(id) {
+    await cambiarEstado(id, "EN_COCINA");
+    imprimirSoloTicket(id);
+  }
+
+  function imprimirSoloTicket(id) {
+    const p = pedidosMap[id];
+    const items = JSON.parse(p.items_json || "[]");
+    const itemsTicket = items.map(i => `<div>${i.cantidad || 1}x ${i.nombre} - $${i.subtotal || i.precio}</div>`).join("");
+    const vueltoTxt = (p.metodo_pago === "EFECTIVO" && p.paga_con > p.total_final)
+      ? `<div>Paga con: $${p.paga_con} | VUELTO: $${p.paga_con - p.total_final}</div>`
+      : "";
+
+    document.getElementById("ticket-80mm").innerHTML = `
+      <div class="t-center t-bold">*** ${comercioActual.nombre.toUpperCase()} ***</div>
+      <div class="t-center">SURPIDE #${p.id} (${p.tipo_entrega})</div>
+      <div class="t-center">${p.creado_en}</div>
+      <div class="t-line"></div>
+      <div><strong>CLIENTE:</strong> ${p.cliente_nombre} (${p.cliente_tel})</div>
+      <div><strong>DESTINO:</strong> ${p.direccion_calle}</div>
+      ${p.entrecalles !== '-' ? `<div><strong>ENTRE:</strong> ${p.entrecalles}</div>` : ''}
+      <div><strong>BARRIO:</strong> ${p.barrio_destino} (${p.localidad_destino})</div>
+      ${p.referencia_casa ? `<div><strong>REF:</strong> ${p.referencia_casa}</div>` : ""}
+      ${p.repartidor_nombre ? `<div><strong>CADETE:</strong> ${p.repartidor_nombre}</div>` : ""}
+      <div class="t-line"></div>
+      <div class="t-bold">COMANDA COCINA:</div>
+      ${itemsTicket}
+      <div class="t-line"></div>
+      <div>Comida: $${p.subtotal_comida - (p.descuento_cupon || 0)} | Envío: $${p.costo_envio}</div>
+      <div class="t-bold">TOTAL: $${p.total_final} (${p.metodo_pago})</div>
+      ${vueltoTxt}
+      <div>PIN SEGURIDAD: <strong>${p.pin_entrega}</strong></div>
+      <div class="t-line"></div>
+    `;
+    window.print();
+  }
+
+  // LÓGICA DE CIERRE DE CAJA / RENDICIÓN DE CADETES
+  function cargarSelectCadetesRendicion() {
+    const sel = document.getElementById("rend-sel-cadete");
+    const cadetes = comercioActual.cadetes_propios || [];
+    if (cadetes.length === 0) {
+      sel.innerHTML = `<option value="">No hay cadetes propios cargados</option>`;
+      return;
+    }
+    sel.innerHTML = cadetes.map(c => `<option value="${c.id}" data-nombre="${c.nombre}">${c.nombre} (${c.vehiculo})</option>`).join("");
+    calcularPreRendicion();
+  }
+
+  function calcularPreRendicion() {
+    const sel = document.getElementById("rend-sel-cadete");
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+    const cadeteNombre = opt.dataset.nombre || "";
+    document.getElementById("rr-nombre").innerText = cadeteNombre;
+
+    // Filtrar pedidos entregados de este cadete que aún no fueron rendidos
+    const list = Object.values(pedidosMap).filter(p =>
+      p.estado === "ENTREGADO" &&
+      !p.rendido &&
+      (p.repartidor_nombre || "").toLowerCase().includes(cadeteNombre.toLowerCase())
+    );
+
+    let efecCobrado = 0;
+    let totalEnviosCadete = 0;
+    list.forEach(p => {
+      if (p.metodo_pago === "EFECTIVO") efecCobrado += p.total_final;
+      totalEnviosCadete += p.costo_envio; // El local le paga el envío al cadete o este lo cobra en efectivo
+    });
+
+    const netoRendir = Math.max(0, efecCobrado - totalEnviosCadete);
+
+    document.getElementById("rr-cant").innerText = list.length;
+    document.getElementById("rr-efec").innerText = "$" + efecCobrado.toLocaleString("es-AR");
+    document.getElementById("rr-envios").innerText = "$" + totalEnviosCadete.toLocaleString("es-AR");
+    document.getElementById("rr-neto").innerText = netoRendir.toLocaleString("es-AR");
+    document.getElementById("resultado-rendicion").style.display = "block";
+    window.cadeteRendicionActiva = { id: parseInt(sel.value), nombre: cadeteNombre, efecCobrado, totalEnviosCadete, netoRendir, cant: list.length };
+  }
+
+  async function confirmarRendicionCaja() {
+    const info = window.cadeteRendicionActiva;
+    if (!info || info.cant === 0) return alert("No hay pedidos pendientes de rendición para este cadete.");
+    if (!confirm(`¿Confirmar el cierre de caja de ${info.nombre} por un neto de $${info.netoRendir.toLocaleString('es-AR')}?`)) return;
+
+    const res = await fetch("/api/rendiciones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        comercio_id: comercioActual.id,
+        cadete_id: info.id,
+        cadete_nombre: info.nombre,
+        total_efectivo_cobrado: info.efecCobrado,
+        total_envios_pagados: info.totalEnviosCadete,
+        neto_a_rendir_al_local: info.netoRendir,
+        cantidad_pedidos: info.cant
+      })
+    });
+    if (res.ok) {
+      alert("✅ ¡Caja cerrada y rendición archivada con éxito!");
+      cambiarComercio();
+      mostrarVista("rendicion");
+    }
+  }
+
+  async function cargarHistorialRendiciones() {
+    const res = await fetch(`/api/comercios/${comercioActual.id}/rendiciones`);
+    const data = await res.json();
+    const tbody = document.getElementById("tabla-historial-rend");
+    if (data.rendiciones.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:#94a3b8; text-align:center;">Todavía no se realizaron cierres de caja en este local.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.rendiciones.map(r => `
+      <tr>
+        <td>${r.cerrado_en}</td>
+        <td><strong>${r.cadete_nombre}</strong></td>
+        <td>${r.cantidad_pedidos} pedidos</td>
+        <td>$${r.total_efectivo_cobrado.toLocaleString('es-AR')}</td>
+        <td>$${r.total_envios_pagados.toLocaleString('es-AR')}</td>
+        <td style="color:#34d399; font-weight:900;">$${r.neto_a_rendir_al_local.toLocaleString('es-AR')}</td>
+      </tr>
+    `).join("");
+  }
+
+  function renderizarTablaCadetesPropios() {
+    const tbody = document.getElementById("tabla-cadetes-propios");
+    const cadetes = comercioActual.cadetes_propios || [];
+    if (cadetes.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="color:#94a3b8; text-align:center;">No hay cadetes propios cargados.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = cadetes.map(c => `
+      <tr>
+        <td><strong>🛵 ${c.nombre}</strong></td>
+        <td>${c.whatsapp}</td>
+        <td>${c.vehiculo}</td>
+        <td><button onclick="borrarCadetePropio(${c.id})" style="background:#ef4444;">Dar de baja</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function agregarCadetePropio() {
+    const nombre = document.getElementById("cad-nombre").value.trim();
+    const wa = document.getElementById("cad-wa").value.trim();
+    const veh = document.getElementById("cad-veh").value.trim() || "Moto";
+    if (!nombre || !wa) return alert("Completá nombre y WhatsApp.");
+    await fetch("/api/cadetes-propios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comercio_id: comercioActual.id, nombre, whatsapp: wa, vehiculo: veh })
+    });
+    document.getElementById("cad-nombre").value = "";
+    document.getElementById("cad-wa").value = "";
+    cambiarComercio();
+  }
+
+  async function borrarCadetePropio(id) {
+    await fetch(`/api/cadetes-propios/${id}`, { method: "DELETE" });
+    cambiarComercio();
+  }
+
+  function renderizarTablaMenu() {
+    const tbody = document.getElementById("tabla-productos-body");
+    tbody.innerHTML = comercioActual.productos.map(p => `
+      <tr>
+        <td><strong>${p.nombre}</strong><br><small style="color:#94a3b8;">${p.descripcion}</small></td>
+        <td>${p.categoria}</td>
+        <td><input type="number" id="pm-${p.id}" value="${p.precio_mostrador}" style="width:100px;"></td>
+        <td><input type="number" id="pa-${p.id}" value="${p.precio_apps}" style="width:100px;"></td>
+        <td>
+          <select id="disp-${p.id}">
+            <option value="1" ${p.disponible ? 'selected' : ''}>🟢 En Stock</option>
+            <option value="0" ${!p.disponible ? 'selected' : ''}>🔴 Pausado</option>
+          </select>
+        </td>
+        <td><button onclick="guardarProducto(${p.id})" style="background:var(--green);">💾 Guardar</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function guardarProducto(prodId) {
+    const pm = parseFloat(document.getElementById(`pm-${prodId}`).value);
+    const pa = parseFloat(document.getElementById(`pa-${prodId}`).value);
+    const disp = parseInt(document.getElementById(`disp-${prodId}`).value);
+    await fetch(`/api/productos/${prodId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ precio_mostrador: pm, precio_apps: pa, disponible: disp })
+    });
+    alert("✅ Producto actualizado.");
+  }
+
+  async function crearNuevoProducto() {
+    const payload = {
+      comercio_id: comercioActual.id,
+      nombre: document.getElementById("np-nombre").value.trim(),
+      descripcion: document.getElementById("np-desc").value.trim(),
+      categoria: document.getElementById("np-cat").value.trim() || "General",
+      precio_mostrador: parseFloat(document.getElementById("np-mostrador").value || "0"),
+      precio_apps: parseFloat(document.getElementById("np-apps").value || "0"),
+      icono: comercioActual.icono || "🍔"
+    };
+    if (!payload.nombre || !payload.precio_mostrador) return alert("Completá nombre y precio.");
+    await fetch("/api/productos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    cambiarComercio();
+  }
+
+  async function guardarConfigComercio() {
+    const payload = {
+      abierto: parseInt(document.getElementById("cfg-abierto").value),
+      tiempo_estimado: document.getElementById("cfg-tiempo").value.trim(),
+      alias_mp: document.getElementById("cfg-alias").value.trim(),
+      modo_logistica: document.getElementById("cfg-modo-log").value,
+      tipo_tarifa_propia: document.getElementById("cfg-tipo-tarifa").value,
+      costo_envio_fijo: parseFloat(document.getElementById("cfg-costo-fijo").value || "1200"),
+      costo_por_km: parseFloat(document.getElementById("cfg-costo-km").value || "400"),
+      envio_gratis_desde: parseFloat(document.getElementById("cfg-gratis-desde").value || "18000")
+    };
+    await fetch(`/api/comercios/${comercioActual.id}/config`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    alert("✅ Configuración de logística y tarifas por KM guardada.");
+    cambiarComercio();
+  }
+
+  inicializar();
+</script>
+</body>
+</html>

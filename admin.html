@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SurPide PRO | Administración Central y Alta de Comercios</title>
+<style>
+  body {
+    font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #f8fafc;
+    margin: 0; padding: 24px;
+  }
+  .container { max-width: 1020px; margin: 0 auto; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid #334155; padding-bottom: 16px; margin-bottom: 24px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .logo { font-size: 24px; font-weight: 900; color: #ff5500; }
+  .logo span { color: #fff; }
+  .card {
+    background: #1e293b; border-radius: 14px; padding: 20px; margin-bottom: 20px;
+    border: 1px solid #334155;
+  }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th, td {
+    text-align: left; padding: 12px; border-bottom: 1px solid #334155; font-size: 13.5px;
+  }
+  th { color: #94a3b8; }
+  input, select {
+    background: #0f172a; color: #fff; border: 1px solid #475569;
+    padding: 9px 12px; border-radius: 8px; font-size: 13.5px;
+  }
+  button {
+    border: none; padding: 9px 14px; border-radius: 8px;
+    font-weight: 800; cursor: pointer; font-size: 13px;
+  }
+  .btn-wa { background: #25D366; color: #052e16; }
+  .btn-paid { background: #3b82f6; color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">SUR<span>PIDE</span> PRO | Panel Dueño de Plataforma</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;"><button id="btn-lluvia" onclick="toggleLluvia()">Cargando...</button><button onclick="window.open('/api/admin/backup-db', '_blank')" style="background:#10b981; color:#fff;">💾 Descargar Backup DB</button></div>
+  </header>
+
+  <div class="card">
+    <h3 style="margin-top:0;">💰 Liquidación Semanal de Comisiones (5% Directo — $0 Retenciones ARBA)</h3>
+    <p style="color:#94a3b8; font-size:13.5px;">
+      Cada comercio cobra sus ventas en su propio Alias o en efectivo. Acá controlás cuánto vendió cada uno, le mandás el resumen por WhatsApp con un clic y registrás cuando te transfieren tu 5%.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Comercio</th>
+          <th>Link Propio (Bio IG)</th>
+          <th>Pedidos (Propios / Red)</th>
+          <th>Venta Neta</th>
+          <th>Saldo Comisión (5%)</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-liquidacion"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">🏪 Dar de Alta Nuevo Comercio en el Corredor (Glew / Longchamps / Guernica)</h3>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+      <input type="text" id="nc-nombre" placeholder="Nombre (Ej: Helados Glew)">
+      <input type="text" id="nc-slug" placeholder="Slug URL (Ej: helados-glew)">
+      <input type="text" id="nc-rubro" placeholder="Rubro (Ej: Heladería)">
+      <select id="nc-loc">
+        <option value="Glew">Glew</option>
+        <option value="Longchamps">Longchamps</option>
+        <option value="Guernica">Guernica</option>
+      </select>
+      <input type="text" id="nc-barrio" placeholder="Barrio (Ej: Glew Centro)">
+      <input type="text" id="nc-dir" placeholder="Dirección (Ej: Patria 120)">
+      <input type="text" id="nc-wa" placeholder="WhatsApp (Ej: 5491122334455)">
+      <input type="text" id="nc-alias" placeholder="Alias Mercado Pago">
+      <input type="text" id="nc-titular" placeholder="Nombre Titular Cuenta">
+      <button onclick="crearComercio()" style="background:#10b981; color:#fff;">+ Sumar Comercio a SurPide</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let lluviaActiva = false;
+
+  async function cargarResumen() {
+    const res = await fetch("/api/admin/resumen");
+    const data = await res.json();
+    lluviaActiva = data.modo_lluvia;
+
+    const btn = document.getElementById("btn-lluvia");
+    if (lluviaActiva) {
+      btn.innerText = "🌧️ Modo Lluvia ACTIVO (+30% envíos) - Clic para desactivar";
+      btn.style.background = "#3b82f6";
+      btn.style.color = "#fff";
+    } else {
+      btn.innerText = "☀️ Clima Normal - Activar Tarifa Día de Lluvia (+30%)";
+      btn.style.background = "#475569";
+      btn.style.color = "#fff";
+    }
+
+    const tbody = document.getElementById("tabla-liquidacion");
+    tbody.innerHTML = data.liquidaciones.map(l => {
+      const msg = encodeURIComponent(`Hola ${l.nombre}! Te paso el resumen de SurPide: llevás ${l.total_pedidos} pedidos por $${l.venta_comida_bruta}.El saldo de comisión (${l.comision_pct}%) a transferir es de $${l.saldo_pendiente}. ¡Muchas gracias!`);
+      return `
+        <tr>
+          <td><strong>${l.nombre}</strong><br><small style="color:#94a3b8;">📍 ${l.localidad}</small></td>
+          <td><a href="/tienda/${l.slug}" target="_blank" style="color:#38bdf8;">/tienda/${l.slug}</a></td>
+          <td><strong>${l.total_pedidos}</strong> <small style='color:#94a3b8;'>(${l.envios_propios||0} propios / ${l.envios_surpide||0} red)</small></td>
+          <td>$${l.venta_comida_bruta.toLocaleString('es-AR')}</td>
+          <td style="color:#34d399; font-weight:900; font-size:15px;">$${l.saldo_pendiente.toLocaleString('es-AR')}</td>
+          <td style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn-wa" onclick="window.open('https://wa.me/${l.whatsapp}?text=${msg}', '_blank')">📲 Cobrar por WA</button>
+            ${l.saldo_pendiente > 0 ? `<button class="btn-paid" onclick="marcarPagado(${l.id}, ${l.saldo_pendiente})">✓ Saldar $${l.saldo_pendiente}</button>` : `<span style="color:#94a3b8; font-size:12px;">Al día</span>`}
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function marcarPagado(comercioId, monto) {
+    if (!confirm(`¿Confirmar que el comercio ya te transfirió $${monto}?`)) return;
+    await fetch("/api/admin/registrar-pago", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comercio_id: comercioId, monto })
+    });
+    cargarResumen();
+  }
+
+  async function crearComercio() {
+    const payload = {
+      nombre: document.getElementById("nc-nombre").value.trim(),
+      slug: document.getElementById("nc-slug").value.trim(),
+      rubro: document.getElementById("nc-rubro").value.trim(),
+      localidad: document.getElementById("nc-loc").value,
+      barrio: document.getElementById("nc-barrio").value.trim() || "Centro",
+      direccion: document.getElementById("nc-dir").value.trim(),
+      whatsapp: document.getElementById("nc-wa").value.trim(),
+      alias_mp: document.getElementById("nc-alias").value.trim(),
+      titular_mp: document.getElementById("nc-titular").value.trim()
+    };
+    if (!payload.nombre || !payload.slug || !payload.alias_mp) {
+      return alert("Completá al menos Nombre, Slug URL y Alias.");
+    }
+    const res = await fetch("/api/admin/comercios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) return alert(data.detail);
+    alert("✅ Nuevo comercio dado de alta en SurPide.");
+    cargarResumen();
+  }
+
+  async function toggleLluvia() {
+    await fetch("/api/admin/lluvia", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activo: !lluviaActiva })
+    });
+    cargarResumen();
+  }
+
+  cargarResumen();
+</script>
+</body>
+</html>

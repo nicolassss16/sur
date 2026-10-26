@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SurPide PRO | App Repartidores (Longchamps / Glew / Guernica)</title>
+<style>
+  body {
+    font-family: 'Inter', system-ui, sans-serif; background: #090d16; color: #f8fafc;
+    margin: 0; padding: 16px;
+  }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #1e293b; padding-bottom: 12px; margin-bottom: 16px;
+  }
+  .logo { font-size: 22px; font-weight: 900; color: #3b82f6; }
+  .logo span { color: #fff; }
+  .wallet-bar {
+    background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155;
+    padding: 14px; border-radius: 14px; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .driver-box {
+    background: #1e293b; padding: 12px; border-radius: 12px; margin-bottom: 16px;
+    display: flex; gap: 10px; align-items: center;
+  }
+  input {
+    flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #475569;
+    background: #0f172a; color: #fff;
+  }
+  .viaje-card {
+    background: #1e293b; border-left: 6px solid #3b82f6;
+    border-radius: 14px; padding: 16px; margin-bottom: 14px;
+  }
+  .ganancia-pill {
+    background: #065f46; color: #34d399; padding: 6px 12px;
+    border-radius: 8px; font-weight: 900; font-size: 16px;
+  }
+  .cobro-alerta {
+    background: #7c2d12; color: #fed7aa; padding: 10px;
+    border-radius: 10px; font-weight: 700; font-size: 13px; margin: 10px 0; line-height: 1.4;
+  }
+  .btn {
+    width: 100%; border: none; padding: 12px; border-radius: 10px;
+    font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 8px;
+  }
+  .btn-tomar { background: #3b82f6; color: #fff; }
+  .btn-maps { background: #334155; color: #fff; }
+  .btn-wa { background: #25D366; color: #052e16; }
+  .btn-entregado { background: #10b981; color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SUR<span>PIDE</span> 🛵 App Cadetes</div>
+  <span style="color:#34d399; font-size:13px; font-weight:bold;">🟢 Radar Activo</span>
+</header>
+
+<div class="wallet-bar">
+  <div>
+    <small style="color:#94a3b8; font-weight:700;">100% DEL ENVÍO ES PARA VOS</small>
+    <div style="font-size:13px; color:#cbd5e1;">Sin descuentos de plataforma sobre tu viaje</div>
+  </div>
+  <span style="font-size:26px;">🏍️💨</span>
+</div>
+
+<div class="driver-box">
+  <span>👷 Tu Nombre:</span>
+  <input type="text" id="repartidor_nombre" value="Matías (Honda Titan 150)">
+</div>
+
+<div id="lista-viajes"></div>
+
+<script>
+  async function cargarViajes() {
+    const res = await fetch("/api/repartidores/viajes");
+    const data = await res.json();
+    const cont = document.getElementById("lista-viajes");
+
+    if (data.viajes.length === 0) {
+      cont.innerHTML = `<p style="color:#64748b; text-align:center; margin-top:40px;">No hay viajes pendientes en este momento.<br>Apenas un local de Longchamps, Glew o Guernica pida motoquero, te aparece acá al instante.</p>`;
+      return;
+    }
+
+    cont.innerHTML = data.viajes.map(v => {
+      const mapsQuery = encodeURIComponent(`${v.direccion_calle}, ${v.localidad_destino}, Provincia de Buenos Aires, Argentina`);
+      const esEfectivo = v.metodo_pago === "EFECTIVO";
+      const vueltoTxt = (esEfectivo && v.paga_con > v.total_final)
+        ? `<br>⚠️ El cliente abona con $${v.paga_con} (Llevar $${v.paga_con - v.total_final} de vuelto).`
+        : "";
+
+      return `
+        <div class="viaje-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong>Pedido #${v.id} (${v.estado})</strong>
+            <span class="ganancia-pill">Ganás: $${v.costo_envio}</span>
+          </div>
+          <div style="font-size:14px; line-height:1.6;">
+            🏪 <strong>RETIRAR EN:</strong> ${v.comercio_nombre} (${v.comercio_direccion}, ${v.comercio_localidad})<br>
+            📍 <strong>ENTREGAR EN:</strong> ${v.direccion_calle} (e/ ${v.entrecalles}) - <strong>${v.barrio_destino}, ${v.localidad_destino}</strong><br>
+            ${v.referencia_casa ? `🧭 <strong>Ref / GPS:</strong> ${v.referencia_casa}<br>` : ""}
+            👤 <strong>Cliente:</strong> ${v.cliente_nombre} (${v.cliente_tel})
+          </div>
+          <div class="cobro-alerta">
+            ${esEfectivo
+              ? `💵 COBRAR EN EFECTIVO AL CLIENTE: $${v.total_final} (Rendís $${v.total_final - v.costo_envio} en el local y te quedás tus $${v.costo_envio}).${vueltoTxt}`
+              : `✅ PAGADO POR TRANSFERENCIA — No cobrar comida al vecino. El local te abona tu envío ($${v.costo_envio}).`}
+          </div>
+          ${v.estado === "BUSCANDO_CADETE"
+            ? `<button class="btn btn-tomar" onclick="tomarViaje(${v.id})">✋ ¡Tomar este viaje ahora!</button>`
+            : `
+              <div style="margin-top:6px; color:#93c5fd; font-weight:bold;">🛵 Asignado a: ${v.repartidor_nombre}</div>
+              <button class="btn btn-maps" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${mapsQuery}', '_blank')">🗺️ Abrir Ruta en Google Maps</button>
+              <button class="btn btn-wa" onclick="window.open('https://wa.me/549${v.cliente_tel.replace(/[^0-9]/g,'')}?text=Hola!%20Soy%20el%20repartidor%20de%20SurPide,%20estoy%20yendo%20con%20tu%20pedido%20%23${v.id}', '_blank')">💬 Avisar por WhatsApp al Vecino</button>
+              <button class="btn btn-entregado" onclick="confirmarEntregaConPin(${v.id})">🔐 Ingresar PIN del Cliente y Finalizar</button>
+            `
+          }
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function tomarViaje(id) {
+    const nombre = document.getElementById("repartidor_nombre").value.trim() || "Cadete SurPide";
+    const res = await fetch(`/api/pedidos/${id}/tomar-viaje`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repartidor_nombre: nombre })
+    });
+    if (!res.ok) alert("Otro repartidor tomó el viaje un segundo antes.");
+    cargarViajes();
+  }
+
+  async function confirmarEntregaConPin(id) {
+    const pin = prompt("🔐 Ingresá el PIN de 4 dígitos que le figura al cliente en su pantalla:");
+    if (!pin) return;
+    const res = await fetch(`/api/pedidos/${id}/estado`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estado: "ENTREGADO", pin_confirmacion: pin })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert("❌ " + (data.detail || "PIN incorrecto"));
+    } else {
+      alert("✅ ¡Entrega validada con éxito!");
+      cargarViajes();
+    }
+  }
+
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${proto}://${location.host}/ws/repartidores`);
+  ws.onmessage = () => { cargarViajes(); };
+
+  cargarViajes();
+</script>
+</body>
+</html>
